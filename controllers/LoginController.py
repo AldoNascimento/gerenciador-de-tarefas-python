@@ -1,6 +1,8 @@
 from flask import Blueprint, request, Response
 from flask_restx import Namespace, Resource, fields
-from dtos.UsuarioDTO import ErroDTO
+
+import config
+from dtos.ErroDTO import ErroDTO
 
 import json
 
@@ -31,9 +33,32 @@ class Login(Resource):
             body = request.get_json()
 
             if not body or "login" not in body or "senha" not in body:
-                return Response(json.dumps(ErroDTO("Parâmertos de entrada inválidos", 400).__dict__), status=400, mimetype='application/json')
+                return Response(
+                    json.dumps(ErroDTO("Parâmertos de entrada inválidos", 400).__dict__),
+                    status=400,
+                    mimetype='application/json')
 
-            return Response("Login autenticado com sucesso", status=200, mimetype='application/json')
-        except Exception as e:
-            return Response(json.dumps(ErroDTO("Não foi possivel efetuar o login, tente novamente", 500).__dict__), status=500, mimetype='application/json')
+            if body["login"] == config.LOGIN_TESTE and body["senha"] == config.SENHA_TESTE:
+                id_usuario = 1
+
+                token = JWTServices.gerar_token(id_usuario)
+
+                return Response(
+                    json.dumps(UsuarioLoginDTO("Admin", config.LOGIN_TESTE, token).__dict__),
+                    status=200,
+                    mimetype='application/json'
+                )
+
+            return Response(
+                json.dumps(ErroDTO("Usuário ou senha incorretos, favor tentar novamente", 401).__dict__),
+                status=401,
+                mimetype='application/json'
+            )
+
+        except Exception:
+            return Response(
+                json.dumps(ErroDTO("Não foi possivel processar a sua requisição, tente novamente", 500).__dict__),
+                status=500,
+                mimetype='application/json'
+            )
 
